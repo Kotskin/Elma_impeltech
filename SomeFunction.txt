@@ -1,0 +1,136 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using EleWise.ELMA.ConfigurationModel;
+using EleWise.ELMA.Projects.Models;
+using EleWise.ELMA.Projects.Enums;
+using EleWise.ELMA.Projects.Managers;
+using EleWise.ELMA.Security.Models;
+using EleWise.ELMA.Model.Common;
+using EleWise.ELMA.Security.Managers;
+using EleWise.ELMA.Security.Models;
+using EleWise.ELMA.Model.Entities;
+using EleWise.ELMA.Model.Managers;
+using EleWise.ELMA.API;
+using EleWise.ELMA.Model.Types.Settings;
+using EleWise.ELMA.Model.Entities.ProcessContext;
+using Context = EleWise.ELMA.Model.Entities.ProcessContext.P_OplataScheta;
+
+namespace EleWise.ELMA.Model.Scripts
+{
+    
+    /// <summary>
+    /// Модуль сценариев процесса "Оплата счета"
+    /// </summary>
+    public class P_OplataScheta_Scripts : EleWise.ELMA.Workflow.Scripts.ProcessScriptBase<Context>
+    {
+
+        public bool if_DPG(Context context, object GatewayVar)
+        {
+            if (context.Schet.Kompaniya == Kompanii.OOODPG) {
+        		return true;
+            	
+            }
+        	else return false;
+        }
+
+
+
+        public bool Goncharova(Context context, object GatewayVar)
+        {
+        	if (context.Schet.Kompaniya == Kompanii.OOODans || context.Schet.Kompaniya == Kompanii.OOOUpravlyayuschayaKompaniyaGalladens || context.Schet.Kompaniya == Kompanii.OOODFjyuzhn || context.Schet.Kompaniya == Kompanii.OOODesash || context.Schet.Kompaniya == Kompanii.NASKT ) {
+            return true;	
+        	 
+            }
+        	 else return false;
+        }
+
+        public bool Pogonina(Context context, object GatewayVar)
+        {
+        	if (context.Schet.Kompaniya == Kompanii.OOOGalladensOlimpiyskiy || context.Schet.Kompaniya == Kompanii.OOOGalladensSmolenskiy || context.Schet.Kompaniya == Kompanii.OOOGalladensM || context.Schet.Kompaniya == Kompanii.OOOGalladensL || context.Schet.Kompaniya == Kompanii.OOODMG ) {
+           	return true;
+           }
+        	else return false;
+        }
+
+        public void set_gd1(Context context)
+        {
+            context.Status_gd = 1;
+        }
+
+           public void set_gd2(Context context)
+        {
+            context.Status_gd = 2;
+        }
+              public void set_gd3(Context context)
+        {
+            context.Status_gd = 3;
+        }
+        
+        
+        
+        public void set_trueh(Context context)
+        {
+          context.Schet.Oplacheno= true;   
+        }
+
+        public bool check_nal(Context context, object GatewayVar)
+        {
+            if ( context.Schet.FormatOplaty !=null && context.Schet.FormatOplaty.Value == "Безнал.") {
+            	return true;
+            }
+        	if (context.Schet.FormatOplaty.Value == "Нал.") {
+        		return false;
+        	}
+         else return true;
+        }
+
+        public bool check_if_nal(Context context, object GatewayVar)
+        {
+            if (context.Schet.FormatOplaty.Value == "Безнал.") {
+            	return false;
+            }
+        	if (context.Schet.FormatOplaty.Value == "Нал.") {
+        		return true;
+        	}
+        	else return false;
+        }
+
+        public void find_chef(Context context)
+        {
+            var chiefs = context.Iniciator.OrganizationItems.ToArray()
+                .Union(context.Iniciator.OrganizationGroups)
+                .Select(organizationItem =>
+                            {
+                                var parentOrganizationItem = organizationItem.ParentItem;
+                                while (parentOrganizationItem != null && parentOrganizationItem.User == null)
+                                    parentOrganizationItem = parentOrganizationItem.ParentItem;
+                                return parentOrganizationItem != null ? parentOrganizationItem.User : null;
+                            })
+                .Where(u => u != null);
+            var chief = chiefs.First();
+            context.Nachaljnik = chief;
+            context.Nachaljnik.Save();
+            context.Yakovleva= (User)UserManager.Instance.LoadOrNull(23); //23 - Yakovleva
+            context.Goncharova =(User)UserManager.Instance.LoadOrNull(21);
+            context.Pogonin = (User)UserManager.Instance.LoadOrNull(22);
+            
+            try {
+            
+            if (context.Iniciator == UserManager.Instance.LoadOrNull(3) && context.Schet.Kontragent == PublicAPI.CRM.Contractor.LoadOrNull(22) ) {
+            	context.Nachaljnik = (User)UserManager.Instance.LoadOrNull(29) ;
+            }
+            }
+            
+            catch(Exception ex)
+            {
+            
+            }
+        }
+
+        
+
+    }
+
+}
